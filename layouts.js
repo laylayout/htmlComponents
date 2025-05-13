@@ -30,57 +30,55 @@ function getCookie(name) {
 const language = getCookie('language') || 'en';
 
 
-  const basePaths = [
-    'https://laylayout.pages.dev/',
-    'https://raw.githubusercontent.com/wwwdageparty/htmlComponents/refs/heads/master/'
-  ];
+const basePaths = [
+  'https://laylayout.pages.dev/',
+  'https://raw.githubusercontent.com/wwwdageparty/htmlComponents/refs/heads/master/'
+];
 
-  function loadLocalizedComponent(baseName, targetId) {
-    const localizedName = (language && language !== 'en') 
-      ? `${baseName.replace('.html', '')}-${language}.html` 
-      : baseName;
+function loadLocalizedComponent(baseName, targetId) {
+  const lang = (typeof language !== 'undefined' && language !== 'en') ? language : null;
+  const localizedFile = lang ? `${baseName.replace('.html', '')}-${lang}.html` : null;
+  const fallbackFile = baseName;
 
-    const fileCandidates = (language && language !== 'en')
-      ? [localizedName, baseName]
-      : [baseName];
+  const filesToTry = lang ? [localizedFile, fallbackFile] : [fallbackFile];
+  let fileIndex = 0;
+  let pathIndex = 0;
 
-    let fileAttempt = 0;
-    let pathAttempt = 0;
-
-    function tryFetch() {
-      if (fileAttempt >= fileCandidates.length) {
-        console.error(`All file attempts failed for ${baseName}`);
-        return;
-      }
-
-      const fileName = fileCandidates[fileAttempt];
-      const fullUrl = `${basePaths[pathAttempt]}${fileName}`;
-
-      fetch(fullUrl)
-        .then(response => {
-          if (!response.ok) throw new Error('Fetch failed');
-          return response.text();
-        })
-        .then(html => {
-          document.getElementById(targetId).innerHTML = html;
-          if (targetId === 'header') {
-            setLanguageInSelector();
-          }
-        })
-        .catch(() => {
-          pathAttempt++;
-          if (pathAttempt < basePaths.length) {
-            tryFetch();
-          } else {
-            pathAttempt = 0;
-            fileAttempt++;
-            tryFetch();
-          }
-        });
+  function tryNext() {
+    if (fileIndex >= filesToTry.length) {
+      console.error(`Failed to load ${baseName} from all paths.`);
+      return;
     }
 
-    tryFetch();
+    const file = filesToTry[fileIndex];
+    const url = `${basePaths[pathIndex]}${file}`;
+
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error(`Failed fetch: ${url}`);
+        return res.text();
+      })
+      .then(html => {
+        document.getElementById(targetId).innerHTML = html;
+        if (targetId === 'header' && typeof setLanguageInSelector === 'function') {
+          setLanguageInSelector();
+        }
+      })
+      .catch(() => {
+        pathIndex++;
+        if (pathIndex < basePaths.length) {
+          tryNext(); // try next base path for current file
+        } else {
+          pathIndex = 0;
+          fileIndex++;
+          tryNext(); // try next file (fallback) from first path
+        }
+      });
   }
 
-  loadLocalizedComponent('header.html', 'header');
-  loadLocalizedComponent('footer.html', 'footer');
+  tryNext();
+}
+
+// Example usage
+loadLocalizedComponent('header.html', 'header');
+loadLocalizedComponent('footer.html', 'footer');

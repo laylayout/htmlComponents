@@ -55,7 +55,9 @@ function loadLocalizedComponent(baseName, targetId) {
 
     fetch(url)
       .then(res => {
-        if (!res.ok) throw new Error(`Failed fetch: ${url}`);
+        if (!res.ok) {
+          throw new Error(`HTTP error ${res.status} for ${url}`);
+        }
         return res.text();
       })
       .then(html => {
@@ -64,7 +66,8 @@ function loadLocalizedComponent(baseName, targetId) {
           setLanguageInSelector();
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.warn(`Failed to load ${url}:`, err.message || err);
         pathIndex++;
         if (pathIndex < basePaths.length) {
           tryNext(); // try next base path for current file
@@ -78,6 +81,7 @@ function loadLocalizedComponent(baseName, targetId) {
 
   tryNext();
 }
+
 
 // Example usage
 loadLocalizedComponent('header.html', 'header');

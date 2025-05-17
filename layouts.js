@@ -1,16 +1,17 @@
 
-// ===== Language Switcher Function =====
 function switchLanguage() {
   const selector = document.getElementById('langSelector');
   const newLang = selector.value;
 
   if (!newLang) return;
 
-  // Set cookie (expires in 365 days)
   document.cookie = `language=${newLang}; path=/; max-age=${60 * 60 * 24 * 365}`;
+  language = newLang;
+  loadPublicComponents();
 
-  // Reload to apply new language
-  location.reload();
+  if (eventLanguageChanged !== null) {
+    eventLanguageChanged(newLang);
+  }
 }
 function setLanguageInSelector() {
   const selector = document.getElementById('langSelector');
@@ -27,8 +28,24 @@ function getCookie(name) {
   return null;
 }
 
-const language = getCookie('language') || 'en';
+let language = getCookie('language') || 'en';
 
+function initializeHeaderScripts() {
+    const toolsMenuButton = document.getElementById('toolsMenuButton');
+    const toolsMenu = document.getElementById('toolsMenu');
+
+    if (toolsMenuButton && toolsMenu) {
+        toolsMenuButton.addEventListener('click', () => {
+            toolsMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!toolsMenuButton.contains(event.target) && !toolsMenu.contains(event.target)) {
+                toolsMenu.classList.add('hidden');
+            }
+        });
+    }
+}
 
 const basePaths = [
   'https://laylayout.pages.dev/',
@@ -62,8 +79,11 @@ function loadLocalizedComponent(baseName, targetId) {
       })
       .then(html => {
         document.getElementById(targetId).innerHTML = html;
-        if (targetId === 'header' && typeof setLanguageInSelector === 'function') {
-          setLanguageInSelector();
+        if (targetId === 'header') {
+            initializeHeaderScripts();
+            if (typeof setLanguageInSelector === 'function') {
+                setLanguageInSelector();
+            }
         }
       })
       .catch((err) => {
@@ -82,7 +102,12 @@ function loadLocalizedComponent(baseName, targetId) {
   tryNext();
 }
 
+const publicComponents = ['header', 'footer'];
 
-// Example usage
-loadLocalizedComponent('header.html', 'header');
-loadLocalizedComponent('footer.html', 'footer');
+function loadPublicComponents() {
+  publicComponents.forEach(componentName => {
+    loadLocalizedComponent(`${componentName}.html`, componentName);
+  });
+}
+
+loadPublicComponents();

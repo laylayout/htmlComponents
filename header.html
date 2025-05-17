@@ -27,19 +27,3 @@
         </div>
     </nav>
 </div>
-
-<script>
-    const toolsMenuButton = document.getElementById('toolsMenuButton');
-    const toolsMenu = document.getElementById('toolsMenu');
-
-    toolsMenuButton.addEventListener('click', () => {
-        toolsMenu.classList.toggle('hidden');
-    });
-
-    // Close the menu when clicking outside
-    document.addEventListener('click', (event) => {
-        if (!toolsMenuButton.contains(event.target) && !toolsMenu.contains(event.target)) {
-            toolsMenu.classList.add('hidden');
-        }
-    });
-</script>
